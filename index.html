@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>DBZ AR</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+  <!-- กล้อง -->
+  <video id="camera" autoplay playsinline muted></video>
+
+  <!-- พื้นหลังดำ (บังกล้องตอนเล่นเอฟเฟกต์) -->
+  <div id="backdrop"></div>
+
+  <!-- GIF เอฟเฟกต์ (โผล่ทับวิดีโอ) -->
+  <img id="overlay" alt="" />
+
+  <!-- ข้อความดีบัก (บอกว่าตอนนี้ตรวจเจอท่าอะไร) -->
+  <div id="status">—</div>
+
+  <!-- หน้าจอเริ่มต้น (ต้องแตะ 1 ครั้งก่อน ระบบกล้อง/เสียงถึงจะเริ่มได้) -->
+  <div id="startScreen">
+    <h1>DBZ&nbsp;AR</h1>
+    <p class="legend">
+      แตะที่หน้าจอเพื่อเริ่มต้น<br />
+    </p>
+    <button id="startBtn">แตะเพื่อเริ่ม</button>
+    <p class="hint">* ต้องอนุญาตให้เข้าถึงกล้อง</p>
+  </div>
+
+  <!-- แถบควบคุมล่างจอ -->
+  <div id="controls">
+    <button id="muteBtn" class="ctrl" title="ปิด/เปิดเสียง">🔊</button>
+    <button id="volDown" class="ctrl" title="เบาเสียง">−</button>
+    <input id="volSlider" type="range" min="0" max="100" value="80" />
+    <button id="volUp" class="ctrl" title="เพิ่มเสียง">+</button>
+    <button id="flipBtn" class="ctrl" title="สลับกล้อง">🔄</button>
+    <button id="debugBtn" class="ctrl" title="แสดง/ซ่อนดีบัก">🐞</button>
+  </div>
+
+  <script type="module" src="app.js"></script>
+</body>
+</html>
