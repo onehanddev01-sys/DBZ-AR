@@ -54,6 +54,20 @@ html, body {
   opacity: 1;
 }
 
+/* วิดีโอเอฟเฟกต์ (Fusion) — วางกลางจอ ขนาดคำนวณด้วย JS เหมือน GIF */
+#voverlay {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+  opacity: 0;
+  z-index: 5;
+}
+#voverlay.show {
+  opacity: 1;
+}
+
 /* debug */
 #status {
   position: fixed;

@@ -16,6 +16,22 @@
    - middle.gif
    - middle.mp3
 
+🤟 ท่า I Love You (ชี้ + ก้อย + โป้ง)
+   - love.gif
+   - love.mp3
+
+👍 ยกนิ้วโป้งขึ้น
+   - good.gif
+   - good.mp3
+
+👎 คว่ำนิ้วโป้งลง
+   - frieza.gif
+   - frieza.mp3
+
+🔥 Fusion: สองคนเอานิ้วชี้มาจ่อใกล้กัน
+   - fusion.gif
+   - fusion.mp3
+
 หมายเหตุ
 - GIF จะวนลูปเอง (ตามไฟล์ GIF) และจะแสดงค้างไว้จนกว่าเสียงจะเล่นจบ
 - ถ้าอยากใช้นามสกุลอื่น เช่น .wav / .ogg / .webp ให้ไปแก้ชื่อไฟล์ในไฟล์ app.js ตรงส่วน CONFIG
