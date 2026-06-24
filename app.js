@@ -36,6 +36,15 @@ const FUSION = {
   },
 };
 
+// ----------------------------------------------------------------------------
+//  👊 Fist Bump: กำหมัดสองกำ (สองคน) ชนกันกลางจอ → เล่นวิดีโอ (ฟังก์ชันสองคน)
+//     ⬅️  วางไฟล์วิดีโอที่ path ด้านล่าง (ยังไม่มีไฟล์ก็รันได้ แค่จะไม่เล่นอะไร)
+//     ใส่ได้หลายคลิป จะเล่นต่อคิวให้ (เหมือน fat fail → fat form)
+// ----------------------------------------------------------------------------
+const FISTBUMP = {
+  videos: ["media duo/fist bump/fist bump.mp4"],
+};
+
 // แหล่งโมเดล / WASM (เปลี่ยนเวอร์ชันได้ถ้าต้องการ)
 const WASM_URL = "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14/wasm";
 const MODEL_URL =
@@ -52,6 +61,9 @@ const FILL_RATIO = 1.0;
 const FUSION_DIST = 0.2;
 // Fusion: ต้องทำกลางจอถึงจะติด — จุดกึ่งกลางนิ้วต้องห่างจากกลางจอไม่เกินค่านี้ (ค่ามาก = ง่ายขึ้น)
 const CENTER_RADIUS = 0.22;
+
+// Fist Bump: ระยะห่างจุดกลางฝ่ามือสองกำที่ถือว่า "ชนกัน" (0-1 ของขนาดเฟรม, ค่ามาก = ง่ายขึ้น)
+const FISTBUMP_DIST = 0.22;
 
 // ----------------------------------------------------------------------------
 //  อ้างอิง element
@@ -157,6 +169,21 @@ function detect(results) {
         if (dist(mid, { x: 0.5, y: 0.5 }) < CENTER_RADIUS) return "fusion";
       }
 
+  // 👊 Fist Bump: กำหมัดสองกำ (สองคน) ชนกันกลางจอ → ตรวจก่อนท่า punch มือเดียว
+  const fists = [];
+  (results.gestures || []).forEach((g, i) => {
+    if (g[0]?.categoryName === "Closed_Fist" && hands[i]) fists.push(hands[i][9]);
+  });
+  for (let i = 0; i < fists.length; i++)
+    for (let j = i + 1; j < fists.length; j++)
+      if (dist(fists[i], fists[j]) < FISTBUMP_DIST) {
+        const mid = {
+          x: (fists[i].x + fists[j].x) / 2,
+          y: (fists[i].y + fists[j].y) / 2,
+        };
+        if (dist(mid, { x: 0.5, y: 0.5 }) < CENTER_RADIUS) return "fistbump";
+      }
+
   // Gesture เฉพาะก่อน
   if (names.includes("ILoveYou")) return "love";
   if (names.includes("Thumb_Up")) return "good";
@@ -240,20 +267,29 @@ function endPlayback() {
 let videoQueue = [];
 let videoIndex = 0;
 
-function triggerFusion() {
+// เล่นวิดีโอเป็นคิว (ใช้ร่วมกันทั้ง Fusion และ Fist Bump)
+function playVideoQueue(list, label) {
   playing = true;
   backdrop.classList.add("show");
 
-  // เล่น fusion dance ก่อนเสมอ แล้วสุ่มสาขา (gogeta / fat / thin)
-  const keys = Object.keys(FUSION.branches);
-  const pick = keys[Math.floor(Math.random() * keys.length)];
-  videoQueue = [FUSION.dance, ...FUSION.branches[pick]];
+  videoQueue = list;
   videoIndex = 0;
 
-  statusEl.textContent = "fusion → " + pick;
+  statusEl.textContent = label;
   voverlay.classList.add("show");
   voverlay.onended = playNextVideo; // คลิปจบ → เล่นคลิปถัดไปในคิว
   playNextVideo();
+}
+
+function triggerFusion() {
+  // เล่น fusion dance ก่อนเสมอ แล้วสุ่มสาขา (gogeta / fat / thin)
+  const keys = Object.keys(FUSION.branches);
+  const pick = keys[Math.floor(Math.random() * keys.length)];
+  playVideoQueue([FUSION.dance, ...FUSION.branches[pick]], "fusion → " + pick);
+}
+
+function triggerFistBump() {
+  playVideoQueue([...FISTBUMP.videos], "fist bump");
 }
 
 function playNextVideo() {
@@ -286,6 +322,7 @@ window.addEventListener("resize", fitVideo);
 // ตัวกระจาย: fusion เล่นแบบวิดีโอ, ท่าอื่นเล่นแบบ GIF+เสียง
 function fire(key) {
   if (key === "fusion") triggerFusion();
+  else if (key === "fistbump") triggerFistBump();
   else trigger(key);
 }
 
@@ -406,6 +443,7 @@ window.addEventListener("keydown", (e) => {
   if (e.key === "6") fire("good");
   if (e.key === "7") fire("frieza");
   if (e.key === "8") fire("fusion");
+  if (e.key === "9") fire("fistbump");
 });
 
 updateMuteIcon();
