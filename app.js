@@ -46,12 +46,21 @@ const FISTBUMP = {
 };
 
 // ----------------------------------------------------------------------------
-//  🌀 Double Kamehameha: ฝ่ามือสองคนอยู่ใกล้กัน (ปล่อยพร้อมกัน) → เล่นวิดีโอ
+//  🌀 Kamehameha: ฝ่ามือเปิด "สามมือเรียงแนวนอน" → เล่นวิดีโอ (ฟังก์ชันหลายคน)
 //     ⬅️  วางไฟล์วิดีโอที่ path ด้านล่าง (ยังไม่มีไฟล์ก็รันได้ แค่จะไม่เล่นอะไร)
 //     ใส่ได้หลายคลิป จะเล่นต่อคิวให้
 // ----------------------------------------------------------------------------
 const KAMEHAMEHA = {
   videos: ["media duo/double kamehameha/double kamehameha.mp4"],
+};
+
+// ----------------------------------------------------------------------------
+//  🐉 Father-Son Kamehameha: ฝ่ามือเปิด "สามมือเรียงแนวตั้ง" → เล่นวิดีโอ
+//     ⬅️  วางไฟล์วิดีโอที่ path ด้านล่าง (ยังไม่มีไฟล์ก็รันได้ แค่จะไม่เล่นอะไร)
+//     ใส่ได้หลายคลิป จะเล่นต่อคิวให้
+// ----------------------------------------------------------------------------
+const FATHERSON = {
+  videos: ["media duo/father son kamehameha/father son kamehameha.mp4"],
 };
 
 // แหล่งโมเดล / WASM (เปลี่ยนเวอร์ชันได้ถ้าต้องการ)
@@ -74,8 +83,10 @@ const CENTER_RADIUS = 0.22;
 // Fist Bump: ระยะห่างจุดกลางฝ่ามือสองกำที่ถือว่า "ชนกัน" (0-1 ของขนาดเฟรม, ค่ามาก = ง่ายขึ้น)
 const FISTBUMP_DIST = 0.22;
 
-// Double Kamehameha: ระยะห่างฝ่ามือสองคนที่ถือว่า "ใกล้กัน" (0-1 ของขนาดเฟรม, ค่ามาก = ง่ายขึ้น)
-const KAME_DIST = 0.25;
+// Kamehameha: ต้องเจอฝ่ามือเปิดอย่างน้อยกี่มือถึงจะนับว่า "เรียงกัน"
+const KAME_MIN_HANDS = 3;
+// Kamehameha: แกนหลักของแนวเรียงต้องกว้างอย่างน้อยเท่านี้ (0-1) กันมือกระจุกกันแล้วติดมั่ว
+const LINE_SPREAD_MIN = 0.25;
 
 // ----------------------------------------------------------------------------
 //  อ้างอิง element
@@ -128,7 +139,7 @@ async function initModel() {
     GestureRecognizer.createFromOptions(vision, {
       baseOptions: { modelAssetPath: MODEL_URL, delegate },
       runningMode: "VIDEO",
-      numHands: 4, // รองรับ 2 คน (คนละ 2 มือ) สำหรับ Fusion
+      numHands: 6, // รองรับ 3 คน (สำหรับ kamehameha สามมือเรียงกัน)
     });
   try {
     recognizer = await make("GPU"); // ใช้ GPU ก่อน (แม่น + เร็ว)
@@ -196,20 +207,21 @@ function detect(results) {
         if (dist(mid, { x: 0.5, y: 0.5 }) < CENTER_RADIUS) return "fistbump";
       }
 
-  // 🌀 Double Kamehameha: ฝ่ามือสองคนอยู่ใกล้กันกลางจอ → ตรวจก่อนท่า hands (คนเดียวชูสองมือ)
+  // 🌀 Kamehameha: ฝ่ามือเปิด "สามมือเรียงกัน" → ตรวจก่อนท่า hands (คนเดียวชูสองมือ)
+  //    เรียงแนวนอน = kamehameha, เรียงแนวตั้ง = father son kamehameha
   const palms = [];
   (results.gestures || []).forEach((g, i) => {
     if (g[0]?.categoryName === "Open_Palm" && hands[i]) palms.push(hands[i][9]);
   });
-  for (let i = 0; i < palms.length; i++)
-    for (let j = i + 1; j < palms.length; j++)
-      if (dist(palms[i], palms[j]) < KAME_DIST) {
-        const mid = {
-          x: (palms[i].x + palms[j].x) / 2,
-          y: (palms[i].y + palms[j].y) / 2,
-        };
-        if (dist(mid, { x: 0.5, y: 0.5 }) < CENTER_RADIUS) return "kamehameha";
-      }
+  if (palms.length >= KAME_MIN_HANDS) {
+    const xs = palms.map((p) => p.x);
+    const ys = palms.map((p) => p.y);
+    const xRange = Math.max(...xs) - Math.min(...xs); // ความกว้างแนวนอนของกลุ่มมือ
+    const yRange = Math.max(...ys) - Math.min(...ys); // ความสูงแนวตั้งของกลุ่มมือ
+    // แกนไหนกว้างกว่า = ทิศที่มือเรียงตัว (และต้องกว้างพอถึงจะนับว่า "เรียงกัน")
+    if (xRange > yRange && xRange >= LINE_SPREAD_MIN) return "kamehameha"; // แนวนอน
+    if (yRange > xRange && yRange >= LINE_SPREAD_MIN) return "fatherson"; // แนวตั้ง
+  }
 
   // Gesture เฉพาะก่อน
   if (names.includes("ILoveYou")) return "love";
@@ -320,7 +332,11 @@ function triggerFistBump() {
 }
 
 function triggerKamehameha() {
-  playVideoQueue([...KAMEHAMEHA.videos], "double kamehameha");
+  playVideoQueue([...KAMEHAMEHA.videos], "kamehameha");
+}
+
+function triggerFatherSon() {
+  playVideoQueue([...FATHERSON.videos], "father son kamehameha");
 }
 
 function playNextVideo() {
@@ -355,6 +371,7 @@ function fire(key) {
   if (key === "fusion") triggerFusion();
   else if (key === "fistbump") triggerFistBump();
   else if (key === "kamehameha") triggerKamehameha();
+  else if (key === "fatherson") triggerFatherSon();
   else trigger(key);
 }
 
@@ -477,6 +494,7 @@ window.addEventListener("keydown", (e) => {
   if (e.key === "8") fire("fusion");
   if (e.key === "9") fire("fistbump");
   if (e.key === "0") fire("kamehameha");
+  if (e.key === "-") fire("fatherson");
 });
 
 updateMuteIcon();
