@@ -30,7 +30,7 @@ html, body {
 #backdrop {
   position: fixed;
   inset: 0;
-  background: radial-gradient(circle at center, rgba(120,0,0,0.8), #000);
+  background: #000;
   opacity: 0;
   pointer-events: none;
   transition: opacity 0.15s ease;
